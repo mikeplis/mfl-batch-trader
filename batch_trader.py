@@ -2,6 +2,7 @@ import sys
 import urllib
 import urllib2
 import xml.etree.ElementTree as ET
+import json
 
 test_league_id = '67486'
 franchise_id = '0001'
@@ -14,14 +15,23 @@ f = urllib2.urlopen(url)
 data = ET.fromstring(f.read())
 
 user_id = data.attrib['session_id']
-print(user_id)
+
+rosters_req = 'http://football21.myfantasyleague.com/2014/export?TYPE=rosters&L=%s&W=&JSON=1' % test_league_id
+rosters_resp = urllib2.urlopen(rosters_req)
+rosters = json.loads(rosters_resp.read())
+roster_list = rosters['rosters']['franchise']
+
+for roster in roster_list:
+    print(roster['id'])
 
 opener = urllib2.build_opener()
 opener.addheaders.append(('Cookie', 'USER_ID=%s' % user_id))
 params = urllib.urlencode({'OFFEREDTO': '0002', 'WILL_GIVE_UP': 9823, 'WILL_RECEIVE': 10261, 'TYPE': 'tradeProposal', 'L': test_league_id})
 
 url = 'http://football19.myfantasyleague.com/2014/import?%s' % params
-req = opener.open(url)
+
+# commenting this out for right now so that trade request doesn't get send every time I run this
+#req = opener.open(url) 
 
 """
 TODO
