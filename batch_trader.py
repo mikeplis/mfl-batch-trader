@@ -31,11 +31,17 @@ draft_picks = dp['futureDraftPicks']['franchise']
 for draft_pick in draft_picks:
     fid = draft_pick['id']
     if fid != franchise_id:
-        will_receive_id = 'FP_{0}_{1}_{2}'.format(fid, pick_year, pick_round)
-        params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': test_league_id})
-        url = 'http://football19.myfantasyleague.com/2014/import?%s' % params
-        print(url)
-        opener.open(url)
+        picks = draft_pick['futureDraftPick']
+
+        # find first pick that satisfies predicate using 'next': http://stackoverflow.com/questions/8534256/find-first-element-in-a-sequence-that-matches-a-predicate 
+        target_picks = [pick for pick in picks if pick['round'] == pick_round and pick['year'] == pick_year]
+        if target_picks:
+            p = target_picks[0]
+            will_receive_id = 'FP_{0}_{1}_{2}'.format(p['originalPickFor'], p['year'], p['round'])
+            params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': test_league_id})
+            url = 'http://football19.myfantasyleague.com/2014/import?%s' % params
+            #print(url)
+            opener.open(url)
 
 # WILL_GIVE_UP = player that user will give up; player that other owner will receive
 # WILL_RECEIVE = player that user will receive; player that other owner will give up
@@ -53,6 +59,8 @@ TODO
 * Offer player to every other owner in exchange for specific draft pick 
 ** Take year and round as input
 ** If owner has draft pick in that year/round, create trade offer. Else, skip
+
+* Create tool to revoke all outstanding trades
 """
 
 
