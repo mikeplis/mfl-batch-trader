@@ -6,34 +6,27 @@ import json
 
 class Trader:
 
-    def batch(self, password):
-        test_league_id = '67486'
-        franchise_id = '0001'
-        will_give_up_id = '9823'
-        password = password
-
-        params = urllib.urlencode({'L': test_league_id, 'FRANCHISE_ID': franchise_id, 'PASSWORD': password, 'XML': 1})
-        url = "http://football19.myfantasyleague.com/2014/login?%s" % params
-
-        f = urllib2.urlopen(url)
-        data = ET.fromstring(f.read())
-
-        user_id = data.attrib['session_id']
-
+    def __init__(self, password, league_id='67486', franchise_id='0001'):
+        params = urllib.urlencode({'L': league_id, 'FRANCHISE_ID': franchise_id, 'PASSWORD': password, 'XML': 1})
+        url = "http://football19.myfantasyleague.com/2014/login?{}".format(params)
+        resp = urllib2.urlopen(url)
+        user_id = ET.fromstring(resp.read()).attrib['session_id']
         opener = urllib2.build_opener()
-        opener.addheaders.append(('Cookie', 'USER_ID=%s' % user_id))
+        opener.addheaders.append(('Cookie', 'USER_ID={}'.format(user_id)))
 
-        pick_year = '2015'
-        pick_round = '1'
+        self.league_id = league_id
+        self.franchise_id = franchise_id
+        self.opener = opener
 
-        draft_picks_req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L=%s&W=&JSON=1' % test_league_id
-        draft_picks_resp = urllib2.urlopen(draft_picks_req)
-        dp = json.loads(draft_picks_resp.read())
+    def batch(self, will_give_up_id = '9823', pick_year='2015', pick_round='1', dry_run=False):
+        req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
+        resp = urllib2.urlopen(req)
+        dp = json.loads(resp.read())
         draft_picks = dp['futureDraftPicks']['franchise']
 
         for draft_pick in draft_picks:
             fid = draft_pick['id']
-            if fid != franchise_id:
+            if fid != self.franchise_id:
                 picks = draft_pick['futureDraftPick']
 
                 # find first pick that satisfies predicate using 'next': http://stackoverflow.com/questions/8534256/find-first-element-in-a-sequence-that-matches-a-predicate
@@ -41,10 +34,12 @@ class Trader:
                 if target_picks:
                     p = target_picks[0]
                     will_receive_id = 'FP_{0}_{1}_{2}'.format(p['originalPickFor'], p['year'], p['round'])
-                    params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': test_league_id})
-                    url = 'http://football19.myfantasyleague.com/2014/import?%s' % params
-                    #print(url)
-                    opener.open(url)
+                    params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': self.league_id})
+                    url = 'http://football19.myfantasyleague.com/2014/import?{}'.format(params)
+                    if not dry_run:
+                        self.opener.open(url)
+                    else:
+                        print('DRY RUN: {}'.format(url))
 
 # WILL_GIVE_UP = player that user will give up; player that other owner will receive
 # WILL_RECEIVE = player that user will receive; player that other owner will give up
