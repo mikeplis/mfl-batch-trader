@@ -41,6 +41,26 @@ class Trader:
                     else:
                         print('DRY RUN: {}'.format(url))
 
+    def revoke_all(self, dry_run=False):
+        req = 'http://football21.myfantasyleague.com/2014/export?TYPE=pendingTrades&L={}&JSON=1'.format(self.league_id)
+        resp = self.opener.open(req)
+        pending_trades = json.loads(resp.read())['pendingTrades']['pendingTrade']
+        for pending_trade in pending_trades:
+            params = urllib.urlencode({
+                'TYPE': 'tradeResponse',
+                'OFFEREDTO': pending_trade['offeredto'],
+                'WILL_GIVE_UP': pending_trade['will_give_up'],
+                'WILL_RECEIVE': pending_trade['will_receive'],
+                'RESPONSE': 'revoke',
+                'OFFERINGTEAM': self.franchise_id,
+                'L': self.league_id
+            })
+            url = 'http://football21.myfantasyleague.com/2014/import?{}'.format(params)
+            if not dry_run:
+                self.opener.open(url)
+            else:
+                print('DRY RUN: {}'.format(url))
+
 # WILL_GIVE_UP = player that user will give up; player that other owner will receive
 # WILL_RECEIVE = player that user will receive; player that other owner will give up
 
