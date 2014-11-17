@@ -64,6 +64,7 @@ TODO
 
 * Write better algorithm for choosing which pick to create a trade for
 ** Sort by one or many standings parameters retrieved from MFL 'standings' endpoint
+** Create ability to specify a max of X number of offers; useful in larger leagues where there's a large difference in value between early and late picks in a round
 
 * Create tool to revoke all outstanding trades
 
