@@ -4,44 +4,47 @@ import urllib2
 import xml.etree.ElementTree as ET
 import json
 
-test_league_id = '67486'
-franchise_id = '0001'
-will_give_up_id = '9823'
-password = sys.argv[1]
+class Trader:
 
-params = urllib.urlencode({'L': test_league_id, 'FRANCHISE_ID': franchise_id, 'PASSWORD': password, 'XML': 1})
-url = "http://football19.myfantasyleague.com/2014/login?%s" % params
+    def batch(self, password):
+        test_league_id = '67486'
+        franchise_id = '0001'
+        will_give_up_id = '9823'
+        password = password
 
-f = urllib2.urlopen(url)
-data = ET.fromstring(f.read())
+        params = urllib.urlencode({'L': test_league_id, 'FRANCHISE_ID': franchise_id, 'PASSWORD': password, 'XML': 1})
+        url = "http://football19.myfantasyleague.com/2014/login?%s" % params
 
-user_id = data.attrib['session_id']
+        f = urllib2.urlopen(url)
+        data = ET.fromstring(f.read())
 
-opener = urllib2.build_opener()
-opener.addheaders.append(('Cookie', 'USER_ID=%s' % user_id))
+        user_id = data.attrib['session_id']
 
-pick_year = '2015'
-pick_round = '1'
+        opener = urllib2.build_opener()
+        opener.addheaders.append(('Cookie', 'USER_ID=%s' % user_id))
 
-draft_picks_req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L=%s&W=&JSON=1' % test_league_id
-draft_picks_resp = urllib2.urlopen(draft_picks_req)
-dp = json.loads(draft_picks_resp.read())
-draft_picks = dp['futureDraftPicks']['franchise']
+        pick_year = '2015'
+        pick_round = '1'
 
-for draft_pick in draft_picks:
-    fid = draft_pick['id']
-    if fid != franchise_id:
-        picks = draft_pick['futureDraftPick']
+        draft_picks_req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L=%s&W=&JSON=1' % test_league_id
+        draft_picks_resp = urllib2.urlopen(draft_picks_req)
+        dp = json.loads(draft_picks_resp.read())
+        draft_picks = dp['futureDraftPicks']['franchise']
 
-        # find first pick that satisfies predicate using 'next': http://stackoverflow.com/questions/8534256/find-first-element-in-a-sequence-that-matches-a-predicate 
-        target_picks = [pick for pick in picks if pick['round'] == pick_round and pick['year'] == pick_year]
-        if target_picks:
-            p = target_picks[0]
-            will_receive_id = 'FP_{0}_{1}_{2}'.format(p['originalPickFor'], p['year'], p['round'])
-            params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': test_league_id})
-            url = 'http://football19.myfantasyleague.com/2014/import?%s' % params
-            #print(url)
-            opener.open(url)
+        for draft_pick in draft_picks:
+            fid = draft_pick['id']
+            if fid != franchise_id:
+                picks = draft_pick['futureDraftPick']
+
+                # find first pick that satisfies predicate using 'next': http://stackoverflow.com/questions/8534256/find-first-element-in-a-sequence-that-matches-a-predicate
+                target_picks = [pick for pick in picks if pick['round'] == pick_round and pick['year'] == pick_year]
+                if target_picks:
+                    p = target_picks[0]
+                    will_receive_id = 'FP_{0}_{1}_{2}'.format(p['originalPickFor'], p['year'], p['round'])
+                    params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': test_league_id})
+                    url = 'http://football19.myfantasyleague.com/2014/import?%s' % params
+                    #print(url)
+                    opener.open(url)
 
 # WILL_GIVE_UP = player that user will give up; player that other owner will receive
 # WILL_RECEIVE = player that user will receive; player that other owner will give up
@@ -58,7 +61,7 @@ TODO
 ** Retrieve list of draft picks for each owner and pick one at random
 ** Create trade offer
 
-* Offer player to every other owner in exchange for specific draft pick 
+* Offer player to every other owner in exchange for specific draft pick
 ** Take year and round as input
 ** If owner has draft pick in that year/round, create trade offer. Else, skip
 
