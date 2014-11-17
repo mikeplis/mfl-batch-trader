@@ -53,14 +53,20 @@ TODO
 ** Extract all owners that aren't user
 ** Retrieve list of players for each owner and pick one at random
 ** Create trade offer
+
 * Offer player to every other owner in exchange for a draft pick
 ** Retrieve list of draft picks for each owner and pick one at random
 ** Create trade offer
+
 * Offer player to every other owner in exchange for specific draft pick 
 ** Take year and round as input
 ** If owner has draft pick in that year/round, create trade offer. Else, skip
 
+* Write better algorithm for choosing which pick to create a trade for
+** Sort by one or many standings parameters retrieved from MFL 'standings' endpoint
+
 * Create tool to revoke all outstanding trades
+
 """
 
 
