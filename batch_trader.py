@@ -6,7 +6,8 @@ import json
 
 class Trader:
 
-    def __init__(self, password, league_id='67486', franchise_id='0001'):
+    def __init__(self, password, league_id, _franchise_id):
+        franchise_id = self._prepend_zeros(_franchise_id)
         params = urllib.urlencode({'L': league_id, 'FRANCHISE_ID': franchise_id, 'PASSWORD': password, 'XML': 1})
         url = "http://football19.myfantasyleague.com/2014/login?{}".format(params)
         resp = urllib2.urlopen(url)
@@ -18,7 +19,16 @@ class Trader:
         self.franchise_id = franchise_id
         self.opener = opener
 
-    def batch(self, will_give_up_id = '9823', pick_year='2015', pick_round='1', dry_run=False):
+    def _prepend_zeros(self, input):
+        string = str(input)
+        length = len(string)
+        if length >= 4:
+            return string
+        else:
+            num_of_zeros = 4 - length
+            return ''.join(('0' * num_of_zeros, string))
+
+    def batch(self, will_give_up_id='9823', pick_year='2015', pick_round='1', dry_run=False):
         req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
         resp = urllib2.urlopen(req)
         draft_picks = json.loads(resp.read())['futureDraftPicks']['franchise']
