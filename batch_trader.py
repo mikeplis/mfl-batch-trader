@@ -28,7 +28,7 @@ class Trader:
             num_of_zeros = 4 - length
             return ''.join(('0' * num_of_zeros, string))
 
-    def batch(self, will_give_up_id='9823', pick_year='2015', pick_round='1', dry_run=False):
+    def batch(self, will_give_up_id, pick_year, pick_round, dry_run=False):
         req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
         resp = urllib2.urlopen(req)
         draft_picks = json.loads(resp.read())['futureDraftPicks']['franchise']
