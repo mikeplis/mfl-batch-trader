@@ -21,8 +21,7 @@ class Trader:
     def batch(self, will_give_up_id = '9823', pick_year='2015', pick_round='1', dry_run=False):
         req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
         resp = urllib2.urlopen(req)
-        dp = json.loads(resp.read())
-        draft_picks = dp['futureDraftPicks']['franchise']
+        draft_picks = json.loads(resp.read())['futureDraftPicks']['franchise']
 
         for draft_pick in draft_picks:
             fid = draft_pick['id']
