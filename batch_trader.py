@@ -83,6 +83,15 @@ class Trader:
             else:
                 print('DRY RUN: {}'.format(url))
 
+if __name__ == "__main__":
+    t = Trader('67486', '0001', sys.argv[1])
+    try:
+        dry_run = sys.argv[2] == 'True'
+    except IndexError:
+        dry_run = True
+    t.batch('9823', '2015', '1', dry_run=dry_run)
+    t.revoke_all(dry_run=dry_run)
+
 # WILL_GIVE_UP = player that user will give up; player that other owner will receive
 # WILL_RECEIVE = player that user will receive; player that other owner will give up
 
