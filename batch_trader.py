@@ -75,25 +75,10 @@ class Trader:
 
 """
 TODO
-* Offer player to every other owner
-** Retrieve list of other owners from MFL
-** Extract all owners that aren't user
-** Retrieve list of players for each owner and pick one at random
-** Create trade offer
-
-* Offer player to every other owner in exchange for a draft pick
-** Retrieve list of draft picks for each owner and pick one at random
-** Create trade offer
-
-* Offer player to every other owner in exchange for specific draft pick
-** Take year and round as input
-** If owner has draft pick in that year/round, create trade offer. Else, skip
 
 * Write better algorithm for choosing which pick to create a trade for
 ** Sort by one or many standings parameters retrieved from MFL 'standings' endpoint
 ** Create ability to specify a max of X number of offers; useful in larger leagues where there's a large difference in value between early and late picks in a round
-
-* Create tool to revoke all outstanding trades
 
 """
 
