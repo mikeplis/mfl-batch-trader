@@ -6,9 +6,21 @@ import json
 
 class Trader:
 
-    def __init__(self, password, league_id, _franchise_id):
-        franchise_id = self._prepend_zeros(_franchise_id)
-        params = urllib.urlencode({'L': league_id, 'FRANCHISE_ID': franchise_id, 'PASSWORD': password, 'XML': 1})
+    def __init__(self, league_id, _franchise_id, password):
+        def prepend_zeros(input_):
+            string = str(input_)
+            length = len(string)
+            if length >= 4:
+                return string
+            else:
+                num_of_zeros = 4 - length
+                return ''.join(('0' * num_of_zeros, string))
+        franchise_id = prepend_zeros(_franchise_id)
+        params = urllib.urlencode({
+            'L': league_id,
+            'FRANCHISE_ID': franchise_id,
+            'PASSWORD': password,
+            'XML': 1})
         url = "http://football19.myfantasyleague.com/2014/login?{}".format(params)
         resp = urllib2.urlopen(url)
         user_id = ET.fromstring(resp.read()).attrib['session_id']
@@ -19,15 +31,7 @@ class Trader:
         self.franchise_id = franchise_id
         self.opener = opener
 
-    def _prepend_zeros(self, input):
-        string = str(input)
-        length = len(string)
-        if length >= 4:
-            return string
-        else:
-            num_of_zeros = 4 - length
-            return ''.join(('0' * num_of_zeros, string))
-
+    # TODO: allow this function to take in int's and not just strings
     def batch(self, will_give_up_id, pick_year, pick_round, dry_run=False):
         req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
         resp = urllib2.urlopen(req)
@@ -41,9 +45,17 @@ class Trader:
                 # find first pick that satisfies predicate using 'next': http://stackoverflow.com/questions/8534256/find-first-element-in-a-sequence-that-matches-a-predicate
                 target_picks = [pick for pick in picks if pick['round'] == pick_round and pick['year'] == pick_year]
                 if target_picks:
-                    p = target_picks[0]
-                    will_receive_id = 'FP_{0}_{1}_{2}'.format(p['originalPickFor'], p['year'], p['round'])
-                    params = urllib.urlencode({'OFFEREDTO': fid, 'WILL_GIVE_UP': will_give_up_id, 'WILL_RECEIVE': will_receive_id, 'TYPE': 'tradeProposal', 'L': self.league_id})
+                    target_pick = target_picks[0]
+                    will_receive_id = 'FP_{0}_{1}_{2}'.format(
+                        target_pick['originalPickFor'],
+                        target_pick['year'],
+                        target_pick['round'])
+                    params = urllib.urlencode({
+                        'OFFEREDTO': fid,
+                        'WILL_GIVE_UP': will_give_up_id,
+                        'WILL_RECEIVE': will_receive_id,
+                        'TYPE': 'tradeProposal',
+                        'L': self.league_id})
                     url = 'http://football19.myfantasyleague.com/2014/import?{}'.format(params)
                     if not dry_run:
                         self.opener.open(url)
@@ -53,6 +65,7 @@ class Trader:
     def revoke_all(self, dry_run=False):
         req = 'http://football21.myfantasyleague.com/2014/export?TYPE=pendingTrades&L={}&JSON=1'.format(self.league_id)
         resp = self.opener.open(req)
+        # TODO: properly handle situation where this function is called by no pending trades exist
         pending_trades = json.loads(resp.read())['pendingTrades']['pendingTrade']
         for pending_trade in pending_trades:
             params = urllib.urlencode({
