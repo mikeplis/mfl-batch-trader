@@ -31,8 +31,12 @@ class Trader:
         self.franchise_id = franchise_id
         self.opener = opener
 
-    # TODO: allow this function to take in int's and not just strings
-    def batch(self, will_give_up_id, pick_year, pick_round, dry_run=False):
+    def batch(self, will_give_up, pick_year, pick_round, dry_run=False):
+        if isinstance(will_give_up, list):
+            will_give_up = ','.join(map(str,will_give_up))
+        elif isinstance(will_give_up, int):
+            will_give_up = str(will_give_up)
+
         req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
         resp = urllib2.urlopen(req)
         draft_picks = json.loads(resp.read())['futureDraftPicks']['franchise']
@@ -52,7 +56,7 @@ class Trader:
                         target_pick['round'])
                     params = urllib.urlencode({
                         'OFFEREDTO': fid,
-                        'WILL_GIVE_UP': will_give_up_id,
+                        'WILL_GIVE_UP': will_give_up,
                         'WILL_RECEIVE': will_receive_id,
                         'TYPE': 'tradeProposal',
                         'L': self.league_id})
@@ -89,8 +93,7 @@ if __name__ == "__main__":
         dry_run = sys.argv[2] == 'True'
     except IndexError:
         dry_run = True
-    t.batch('9823', '2015', '1', dry_run=dry_run)
-    t.revoke_all(dry_run=dry_run)
+    t.batch([9823, 9448], '2015', '1', dry_run=dry_run)
 
 # WILL_GIVE_UP = player that user will give up; player that other owner will receive
 # WILL_RECEIVE = player that user will receive; player that other owner will give up
