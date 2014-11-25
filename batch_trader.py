@@ -113,6 +113,7 @@ TODO
 * Better log messages
 ** Should display some kind of message when actually sending request, not just on dry runs
 ** Log messages could display actual player/team names. E.g. "Offering Larry Fitzgerald to Dave's Team in exchange for a 2015 2nd round pick originally belonging to Steve's Team"
+*** Default could be print one message (e.g. "Offering <player(s)> in exchange for <pick(s)>") and could add verbose param to print out more detailed messages
 
 """
 
