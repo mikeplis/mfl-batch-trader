@@ -6,6 +6,11 @@ import json
 
 class Trader:
 
+    year = '2014'
+    mfl_import_url = 'http://football.myfantasyleague.com/{}/import'.format(year)
+    mfl_export_url = 'http://football.myfantasyleague.com/{}/export'.format(year)
+    mfl_login_url = 'http://football.myfantasyleague.com/{}/login'.format(year)
+
     def __init__(self, league_id, _franchise_id, password):
         def prepend_zeros(input_):
             string = str(input_)
@@ -21,7 +26,7 @@ class Trader:
             'FRANCHISE_ID': franchise_id,
             'PASSWORD': password,
             'XML': 1})
-        url = "http://football19.myfantasyleague.com/2014/login?{}".format(params)
+        url = '{}?{}'.format(self.mfl_login_url, params)
         resp = urllib2.urlopen(url)
         user_id = ET.fromstring(resp.read()).attrib['session_id']
         opener = urllib2.build_opener()
@@ -75,42 +80,61 @@ class Trader:
             players 123 and 456 in exchange for a 2015 1st, and a second trade
             offering player 789 in exchange for a 2015 1st and a 2016 2nd
         """
-        req = 'http://football21.myfantasyleague.com/2014/export?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.league_id)
+        req = '{}?TYPE=futureDraftPicks&L={}&W=&JSON=1'.format(self.mfl_export_url, self.league_id)
         resp = urllib2.urlopen(req)
-        draft_picks = json.loads(resp.read())['futureDraftPicks']['franchise']
+        franchises = json.loads(resp.read())['futureDraftPicks']['franchise']
 
+        def is_wanted_pick(picks_wanted, owned_picks):
+            print('picks_wanted: {}, owned_pick: {}'.format(picks_wanted, owned_pick))
+            for pick_wanted in picks_wanted:
+                for owned_pick in owned_picks:
+                    if owned_pick['year'] == pick_wanted['year'] and owned_pick['round'] == owned_pick['round']:
+                        return True
+            return False
+
+        """ TODO: how to handle offering multiple draft picks?
+            1) Need to check that owner owns all desired draft picks
+            2) Need to resolve situation where owner owns multiple desired picks
+        """
+
+        """For each offer, I need to:
+            1) Loop through each opposing owner
+            2) See if they own all desired draft picks
+            3) If they do, create and send offer
+        """
         for offer in offers:
             will_give_up = ','.join(map(str,offer['will_give_up']))
-            # TODO: make this be able to handle multiple picks
-            pick_year = str(offer['picks'][0]['year'])
-            pick_round = str(offer['picks'][0]['round'])
-            for draft_pick in draft_picks:
-                fid = draft_pick['id']
-                if fid != self.franchise_id:
-                    picks = draft_pick['futureDraftPick']
-
-                    # find first pick that satisfies predicate using 'next': http://stackoverflow.com/questions/8534256/find-first-element-in-a-sequence-that-matches-a-predicate
-                    target_picks = [pick for pick in picks if pick['round'] == pick_round and pick['year'] == pick_year]
-                    if target_picks:
-                        target_pick = target_picks[0]
+            picks_wanted = offer['picks']
+            for franchise in franchises:
+                other_franchise_id = franchise['id']
+                if other_franchise_id != self.franchise_id:
+                    owned_picks = franchise['futureDraftPick']
+                    target_pick = next(
+                        (
+                            owned_pick
+                            for owned_pick in owned_picks
+                            if is_wanted_pick(picks_wanted, owned_pick)
+                        ),
+                        None)
+                    if target_pick:
                         will_receive_id = 'FP_{0}_{1}_{2}'.format(
                             target_pick['originalPickFor'],
                             target_pick['year'],
                             target_pick['round'])
                         params = urllib.urlencode({
-                            'OFFEREDTO': fid,
+                            'OFFEREDTO': other_franchise_id,
                             'WILL_GIVE_UP': will_give_up,
                             'WILL_RECEIVE': will_receive_id,
                             'TYPE': 'tradeProposal',
                             'L': self.league_id})
-                        url = 'http://football19.myfantasyleague.com/2014/import?{}'.format(params)
+                        url = '{}?{}'.format(self.mfl_import_url, params)
                         if not dry_run:
                             self.opener.open(url)
                         else:
                             print('DRY RUN: {}'.format(url))
 
     def revoke_all(self, dry_run=False):
-        req = 'http://football21.myfantasyleague.com/2014/export?TYPE=pendingTrades&L={}&JSON=1'.format(self.league_id)
+        req = '{}?TYPE=pendingTrades&L={}&JSON=1'.format(self.mfl_export_url, self.league_id)
         resp = self.opener.open(req)
         # TODO: properly handle situation where this function is called by no pending trades exist
         pending_trades = json.loads(resp.read())['pendingTrades']['pendingTrade']
@@ -124,13 +148,13 @@ class Trader:
                 'OFFERINGTEAM': self.franchise_id,
                 'L': self.league_id
             })
-            url = 'http://football21.myfantasyleague.com/2014/import?{}'.format(params)
+            url = '{}?{}'.format(self.mfl_import_url, params)
             if not dry_run:
                 self.opener.open(url)
             else:
                 print('DRY RUN: {}'.format(url))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     t = Trader('67486', '0001', sys.argv[1])
     try:
         dry_run = sys.argv[2] == 'True'
@@ -150,6 +174,7 @@ TODO
 
 * Write better algorithm for choosing which pick to create a trade for
 ** Sort by one or many standings parameters retrieved from MFL 'standings' endpoint
+*** MFL API "league" endpoint returns a "standingsSort" attribute
 ** Create ability to specify a max of X number of offers; useful in larger leagues where there's a large difference in value between early and late picks in a round
 
 * Write tests
